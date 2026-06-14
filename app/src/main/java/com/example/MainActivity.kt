@@ -1365,6 +1365,7 @@ fun WebViewManager(activeUrl: String) {
             var webView = webViewCache[activeUrl]
             if (webView == null) {
                 webView = WebView(context).apply {
+                    setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
                     layoutParams = android.widget.FrameLayout.LayoutParams(
                         android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
                         android.widget.FrameLayout.LayoutParams.MATCH_PARENT
@@ -1372,18 +1373,27 @@ fun WebViewManager(activeUrl: String) {
                     settings.apply {
                         javaScriptEnabled = true
                         domStorageEnabled = true
-                        cacheMode = WebSettings.LOAD_DEFAULT
+                        databaseEnabled = true
+                        cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
                         mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                         setSupportZoom(true)
                         builtInZoomControls = true
                         displayZoomControls = false
                         userAgentString = "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
+                        
+                        loadsImagesAutomatically = true
+                        blockNetworkImage = true
                     }
                     val cookieManager = CookieManager.getInstance()
                     cookieManager.setAcceptCookie(true)
                     cookieManager.setAcceptThirdPartyCookies(this, true)
 
                     webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            super.onPageFinished(view, url)
+                            view?.settings?.blockNetworkImage = false
+                        }
+
                         @SuppressLint("WebViewClientOnReceivedSslError")
                         override fun onReceivedSslError(view: WebView?, handler: android.webkit.SslErrorHandler?, error: android.net.http.SslError?) {
                             handler?.proceed()
