@@ -1,0 +1,66 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="appclip">
+      <rect x="0" y="0" width="1024" height="1024" rx="224"/>
+    </clipPath>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100&amp;display=swap');
+      .cong { font-family: 'Noto Sans SC', sans-serif; font-weight: 100; font-size: 258px; fill: #F5C842; }
+    </style>
+  </defs>
+
+  <!-- 底板 -->
+  <rect x="0" y="0" width="1024" height="1024" rx="224" fill="#2D1B4E"/>
+
+  <g clip-path="url(#appclip)">
+
+    <!-- 星点 -->
+    <circle cx="156"  cy="130"  r="5.4"  fill="#F5C842" opacity="0.75"/>
+    <circle cx="297"  cy="76"   r="3.2"  fill="#F5C842" opacity="0.5"/>
+    <circle cx="486"  cy="60"   r="4.8"  fill="#F5C842" opacity="0.65"/>
+    <circle cx="680"  cy="102"  r="3.2"  fill="#F5C842" opacity="0.45"/>
+    <circle cx="836"  cy="148"  r="5.4"  fill="#F5C842" opacity="0.55"/>
+    <circle cx="918"  cy="270"  r="3.2"  fill="#F5C842" opacity="0.4"/>
+    <circle cx="113"  cy="297"  r="3.2"  fill="#F5C842" opacity="0.4"/>
+    <circle cx="183"  cy="426"  r="2.7"  fill="#F5C842" opacity="0.3"/>
+    <circle cx="852"  cy="400"  r="4"    fill="#F5C842" opacity="0.4"/>
+    <circle cx="399"  cy="113"  r="2.7"  fill="#F5C842" opacity="0.35"/>
+    <circle cx="777"  cy="194"  r="2.7"  fill="#F5C842" opacity="0.35"/>
+    <circle cx="62"   cy="200"  r="2"    fill="#F5C842" opacity="0.3"/>
+    <circle cx="950"  cy="180"  r="2"    fill="#F5C842" opacity="0.3"/>
+
+    <!-- 远山 -->
+    <polygon points="512,221 836,517 188,517" fill="#3D2660"/>
+    <!-- 中山 -->
+    <polygon points="350,318 810,648 81,648" fill="#4A2E72"/>
+    <!-- 主峰 -->
+    <polygon points="512,184 858,648 168,648" fill="#5B3A8A"/>
+
+    <!-- 山脊光线 -->
+    <polyline points="512,184 858,648" fill="none" stroke="#F5C842" stroke-width="5.4" stroke-linecap="round"/>
+    <polyline points="512,184 168,648" fill="none" stroke="#E8A030" stroke-width="4"   stroke-linecap="round" opacity="0.7"/>
+
+    <!-- 地平线 -->
+    <line x1="86" y1="656" x2="938" y2="656" stroke="#F5C842" stroke-width="2.7" opacity="0.3"/>
+
+    <!-- 探路折线 -->
+    <polyline points="194,656 297,540 426,594 512,486 605,551 734,656"
+              fill="none" stroke="#FF8C42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- 起点 -->
+    <circle cx="194" cy="656" r="13.5" fill="#FF8C42"/>
+    <!-- 终点锚点 -->
+    <circle cx="512" cy="486" r="27"   fill="#F5C842"/>
+    <circle cx="512" cy="486" r="13.5" fill="#2D1B4E"/>
+
+    <!-- 月牙 -->
+    <path d="M464,151 Q512,113 560,151 Q512,129 464,151" fill="#F5C842" opacity="0.92"/>
+
+    <!-- 分隔细线 -->
+    <line x1="324" y1="691" x2="700" y2="691" stroke="#F5C842" stroke-width="2.2" opacity="0.22"/>
+
+    <!-- 「聪」字 -->
+    <text class="cong" x="512" y="906" text-anchor="middle" opacity="0.92">聪</text>
+
+  </g>
+</svg>

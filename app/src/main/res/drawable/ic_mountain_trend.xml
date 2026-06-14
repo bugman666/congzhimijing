@@ -1,0 +1,68 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Stars -->
+    <path android:fillColor="#D4AF37" android:pathData="M 20,20 h 1 v 1 h -1 z" />
+    <path android:fillColor="#D4AF37" android:pathData="M 80,15 h 1 v 1 h -1 z" />
+    <path android:fillColor="#D4AF37" android:pathData="M 90,30 h 1 v 1 h -1 z" />
+    <path android:fillColor="#D4AF37" android:pathData="M 30,40 h 1 v 1 h -1 z" />
+    
+    <!-- Sun/Moon Crescent -->
+    <path
+        android:strokeColor="#D4AF37"
+        android:strokeWidth="1"
+        android:pathData="M 48,22 Q 54,16 60,22" />
+        
+    <!-- Mountain Shadow/Base -->
+    <path
+        android:fillColor="#3D296F"
+        android:pathData="M 14,70 L 54,26 L 94,70 Z" />
+
+    <!-- Mountain Body -->
+    <path
+        android:fillColor="#58419B"
+        android:pathData="M 24,70 L 54,26 L 84,70 Z" />
+
+    <!-- Mountain Right Highlight -->
+    <path
+        android:strokeColor="#D4AF37"
+        android:strokeWidth="1.5"
+        android:pathData="M 54,26 L 84,70" />
+        
+    <!-- Base Line -->
+    <path
+        android:strokeColor="#A88B35"
+        android:strokeWidth="1"
+        android:pathData="M 14,70 L 94,70" />
+
+    <!-- Trend Line -->
+    <path
+        android:strokeColor="#FF8B3D"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"
+        android:pathData="M 22,66 L 34,54 L 46,60 L 54,46 L 76,66" />
+        
+    <!-- Circle at peak -->
+    <path
+        android:fillColor="#1E163B"
+        android:strokeColor="#D4AF37"
+        android:strokeWidth="2.5"
+        android:pathData="M 50.5,46 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0" />
+
+    <!-- Text Base Lines -->
+    <path
+        android:strokeColor="#A88B35"
+        android:strokeAlpha="0.5"
+        android:strokeWidth="1"
+        android:pathData="M 36,75 L 72,75" />
+
+    <!-- Stylized "聪总" (Simplified Blocks) -->
+    <!-- Represents the text visually since text tags aren't reliable in all vector parsers -->
+    <path
+        android:fillColor="#D4AF37"
+        android:pathData="M 46,78 h4 v4 h-4 z M 44,84 h8 v1 h-8 z M 56,78 h6 v4 h-6 z M 56,84 h6 v1 h-6 z M 54,88 h2 v4 h-2 z" />
+
+</vector>

@@ -13,10 +13,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -86,17 +89,17 @@ fun SecretAppMain(viewModel: MainViewModel) {
             AppState.SPLASH -> SplashScreen(viewModel)
             AppState.LOGIN -> LoginScreen(viewModel)
             AppState.ADMIN_DASHBOARD -> AdminDashboardScreen(viewModel)
-            AppState.PORTAL -> PasscodeScreen(viewModel)
+            AppState.PORTAL -> MainContainerScreen(viewModel)
             AppState.WEBVIEW -> {
                 val url by viewModel.activeUrl.collectAsState()
                 url?.let {
                     WebViewScreen(
                         url = it,
                         onReturnHome = {
-                            viewModel.logout()
+                            viewModel.returnToPortal(0)
                         },
                         onSwitchSite = {
-                            viewModel.returnToPortal()
+                            viewModel.returnToPortal(1)
                         }
                     )
                 }
@@ -206,13 +209,60 @@ fun AdminDashboardScreen(viewModel: MainViewModel) {
             TabRow(selectedTabIndex = tabIndex, containerColor = bgColors, contentColor = Indigo500) {
                 Tab(selected = tabIndex == 0, onClick = { tabIndex = 0 }) { Text("站点管理", modifier = Modifier.padding(16.dp), color = textColors) }
                 Tab(selected = tabIndex == 1, onClick = { tabIndex = 1 }) { Text("账号管理", modifier = Modifier.padding(16.dp), color = textColors) }
+                Tab(selected = tabIndex == 2, onClick = { tabIndex = 2 }) { Text("公告管理", modifier = Modifier.padding(16.dp), color = textColors) }
             }
 
             Box(modifier = Modifier.weight(1f).padding(16.dp)) {
-                if (tabIndex == 0) {
-                    SitesManager(viewModel, cardBg, textColors)
-                } else {
-                    AccountsManager(viewModel, cardBg, textColors)
+                when (tabIndex) {
+                    0 -> SitesManager(viewModel, cardBg, textColors)
+                    1 -> AccountsManager(viewModel, cardBg, textColors)
+                    2 -> AnnouncementsManager(viewModel, cardBg, textColors)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AnnouncementsManager(viewModel: MainViewModel, cardBg: Color, textColors: Color) {
+    val announcements by viewModel.announcements.collectAsState()
+    var content by remember { mutableStateOf("") }
+
+    Column {
+        Card(colors = CardDefaults.cardColors(containerColor = cardBg), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("发布公告", fontWeight = FontWeight.Bold, color = textColors)
+                OutlinedTextField(
+                    value = content, 
+                    onValueChange = { content = it }, 
+                    label = { Text("内容") }, 
+                    modifier = Modifier.fillMaxWidth().height(100.dp)
+                )
+                Button(onClick = {
+                    if (content.isNotBlank()) {
+                        viewModel.addAnnouncement(content)
+                        content = ""
+                    }
+                }, modifier = Modifier.padding(top = 8.dp)) { Text("发布") }
+            }
+        }
+        
+        LazyColumn {
+            items(announcements) { ann ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).background(cardBg, RoundedCornerShape(8.dp)).padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(ann.content, color = textColors)
+                        if (!ann.createdAt.isNullOrEmpty()) {
+                            Text("时间: ${ann.createdAt}", fontSize = 12.sp, color = textColors.copy(alpha=0.6f))
+                        }
+                    }
+                    IconButton(onClick = { viewModel.deleteAnnouncement(ann.id) }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "删除", tint = Color.Red)
+                    }
                 }
             }
         }
@@ -313,10 +363,444 @@ fun AccountsManager(viewModel: MainViewModel, cardBg: Color, textColors: Color) 
 
 
 @Composable
-fun PasscodeScreen(viewModel: MainViewModel) {
+fun MainContainerScreen(viewModel: MainViewModel) {
+    val tabIndex by viewModel.currentTabIndex.collectAsState()
+    val isDark = isSystemInDarkTheme()
+    val bgColors = if (isDark) Zinc950 else Zinc50
+    val cardBg = if (isDark) Zinc900 else Color.White
+    val textColors = if (isDark) Zinc100 else Zinc900
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar(containerColor = cardBg) {
+                NavigationBarItem(
+                    selected = tabIndex == 0,
+                    onClick = { viewModel.currentTabIndex.value = 0 },
+                    icon = { Icon(Icons.Filled.Home, contentDescription = "主界面") },
+                    label = { Text("主界面") },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Indigo500, selectedTextColor = Indigo500)
+                )
+                NavigationBarItem(
+                    selected = tabIndex == 1,
+                    onClick = { viewModel.currentTabIndex.value = 1 },
+                    icon = { Icon(Icons.Filled.Lock, contentDescription = "秘境") },
+                    label = { Text("秘境") },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Indigo500, selectedTextColor = Indigo500)
+                )
+                NavigationBarItem(
+                    selected = tabIndex == 2,
+                    onClick = { viewModel.currentTabIndex.value = 2 },
+                    icon = { Icon(Icons.Filled.Email, contentDescription = "社区") },
+                    label = { Text("社区") },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Indigo500, selectedTextColor = Indigo500)
+                )
+                NavigationBarItem(
+                    selected = tabIndex == 3,
+                    onClick = { viewModel.currentTabIndex.value = 3 },
+                    icon = { Icon(Icons.Filled.Person, contentDescription = "个人中心") },
+                    label = { Text("个人中心") },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Indigo500, selectedTextColor = Indigo500)
+                )
+            }
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues)) {
+            when (tabIndex) {
+                0 -> PortalTabScreen(viewModel)
+                1 -> SecretRealmTabScreen(viewModel)
+                2 -> CommunityTabScreen(viewModel)
+                3 -> ProfileTabScreen(viewModel)
+            }
+        }
+    }
+}
+
+@Composable
+fun SecretRealmTabScreen(viewModel: MainViewModel) {
+    val unlockedSites by viewModel.unlockedSites.collectAsState()
+    val isDark = isSystemInDarkTheme()
+    val bgColors = if (isDark) Zinc950 else Zinc50
+    val textColors = if (isDark) Zinc100 else Zinc900
+    val cardBg = if (isDark) Zinc900 else Color.White
+
+    Column(modifier = Modifier.fillMaxSize().background(bgColors).padding(16.dp)) {
+        Text("你的秘境", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textColors, modifier = Modifier.padding(bottom = 16.dp))
+        if (unlockedSites.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("尚未解锁任何站点", color = textColors.copy(alpha = 0.5f))
+            }
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(unlockedSites) { site ->
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = cardBg),
+                        onClick = { viewModel.openUnlockedSite(site) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Lock, contentDescription = null, tint = Indigo500)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(site.name, fontWeight = FontWeight.Bold, color = textColors)
+                                Text(site.url, fontSize = 12.sp, color = textColors.copy(alpha = 0.6f))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun CommunityTabScreen(viewModel: MainViewModel) {
+    val comments by viewModel.comments.collectAsState()
+    val nickname by viewModel.nickname.collectAsState()
+    val isAdmin by viewModel.isAdminUser.collectAsState()
+    var content by remember { mutableStateOf("") }
+    val isDark = isSystemInDarkTheme()
+    val bgColors = if (isDark) Zinc950 else Zinc50
+    val textColors = if (isDark) Zinc100 else Zinc900
+    val cardBg = if (isDark) Zinc900 else Color.White
+
+    var selectedComment by remember { mutableStateOf<com.example.data.Comment?>(null) }
+    var editCommentText by remember { mutableStateOf("") }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    var showActionDialog by remember { mutableStateOf(false) }
+
+    if (showActionDialog && selectedComment != null) {
+        AlertDialog(
+            onDismissRequest = { showActionDialog = false; selectedComment = null },
+            title = { Text("管理评论", fontWeight = FontWeight.Bold) },
+            text = { Text("请选择要执行的操作", color = textColors) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showActionDialog = false
+                    showEditDialog = true
+                }) { Text("修改", color = Indigo500) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showActionDialog = false
+                    showDeleteDialog = true
+                }) { Text("删除", color = Color.Red) }
+            },
+            containerColor = cardBg,
+            titleContentColor = textColors
+        )
+    }
+
+    if (showDeleteDialog && selectedComment != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false; selectedComment = null },
+            title = { Text("删除评论", fontWeight = FontWeight.Bold) },
+            text = { Text("确定要删除这条评论吗？", color = textColors) },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedComment?.let { viewModel.deleteComment(it.id) }
+                    showDeleteDialog = false
+                    selectedComment = null
+                }) { Text("删除", color = Color.Red) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false; selectedComment = null }) { Text("取消") }
+            },
+            containerColor = cardBg,
+            titleContentColor = textColors
+        )
+    }
+
+    if (showEditDialog && selectedComment != null) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false; selectedComment = null },
+            title = { Text("修改评论", fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = editCommentText,
+                    onValueChange = { editCommentText = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedComment?.let { viewModel.updateComment(it.id, editCommentText) }
+                    showEditDialog = false
+                    selectedComment = null
+                }) { Text("保存", color = Indigo500) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false; selectedComment = null }) { Text("取消") }
+            },
+            containerColor = cardBg,
+            titleContentColor = textColors
+        )
+    }
+
+    Column(modifier = Modifier.fillMaxSize().background(bgColors).padding(16.dp)) {
+        Text("社区交流", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textColors, modifier = Modifier.padding(bottom = 16.dp))
+        
+        Card(colors = CardDefaults.cardColors(containerColor = cardBg), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    label = { Text("发表看法...") },
+                    modifier = Modifier.fillMaxWidth().height(100.dp)
+                )
+                Button(onClick = {
+                    if (content.isNotBlank()) {
+                        viewModel.addComment(content)
+                        content = ""
+                    }
+                }, modifier = Modifier.align(Alignment.End).padding(top = 8.dp)) {
+                    Text("发布")
+                }
+            }
+        }
+        
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(comments) { comment ->
+                val displayAuthor = comment.account?.nickname ?: comment.author ?: "访客"
+                val canManage = isAdmin || (nickname.isNotBlank() && displayAuthor == nickname)
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (canManage) {
+                                Modifier.combinedClickable(
+                                    onClick = {},
+                                    onLongClick = {
+                                        selectedComment = comment
+                                        editCommentText = comment.content
+                                        if (isAdmin) {
+                                            showActionDialog = true
+                                        } else {
+                                            showDeleteDialog = true
+                                        }
+                                    }
+                                )
+                            } else Modifier
+                        )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(displayAuthor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Indigo500)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(comment.content, color = textColors)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProfileTabScreen(viewModel: MainViewModel) {
+    val config by viewModel.appConfig.collectAsState()
+    val isAdmin by viewModel.isAdminUser.collectAsState()
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var showAuthorDialog by remember { mutableStateOf(false) }
+    
+    val nickname by viewModel.nickname.collectAsState()
+    var showNicknameDialog by remember { mutableStateOf(false) }
+    var tempNickname by remember { mutableStateOf("") }
+    var nicknameError by remember { mutableStateOf<String?>(null) }
+    
+    val isDark = isSystemInDarkTheme()
+    val bgColors = if (isDark) Zinc950 else Zinc50
+    val textColors = if (isDark) Zinc100 else Zinc900
+    val cardBg = if (isDark) Zinc900 else Color.White
+    val secondaryText = if (isDark) Zinc400 else Zinc500
+    val dividerColor = if (isDark) Zinc800 else Zinc200
+
+    if (showNicknameDialog) {
+        AlertDialog(
+            onDismissRequest = { showNicknameDialog = false; nicknameError = null },
+            title = { Text("修改昵称", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = tempNickname,
+                        onValueChange = { tempNickname = it },
+                        label = { Text("新昵称") },
+                        singleLine = true,
+                        isError = nicknameError != null
+                    )
+                    if (nicknameError != null) {
+                        Text(nicknameError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                    }
+                    Text("提示：昵称每3天只能修改一次。", fontSize = 12.sp, color = secondaryText, modifier = Modifier.padding(top = 8.dp))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (tempNickname.isBlank()) {
+                        nicknameError = "昵称不能为空"
+                    } else {
+                        viewModel.updateNickname(tempNickname) { success, errorMsg ->
+                            if (success) {
+                                showNicknameDialog = false
+                                nicknameError = null
+                            } else {
+                                nicknameError = errorMsg ?: "修改太频繁，请3天后再试"
+                            }
+                        }
+                    }
+                }) { Text("确定", color = Indigo500) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNicknameDialog = false; nicknameError = null }) { Text("取消", color = secondaryText) }
+            },
+            containerColor = cardBg,
+            titleContentColor = textColors
+        )
+    }
+
+    if (showUpdateDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpdateDialog = false },
+            title = { Text("检查更新", fontWeight = FontWeight.Bold) },
+            text = { Text(config.updateInfo, color = textColors) },
+            confirmButton = { TextButton(onClick = { showUpdateDialog = false }) { Text("确定", color = Indigo500) } },
+            containerColor = cardBg,
+            titleContentColor = textColors
+        )
+    }
+    if (showAuthorDialog) {
+        AlertDialog(
+            onDismissRequest = { showAuthorDialog = false },
+            title = { Text("关于作者", fontWeight = FontWeight.Bold) },
+            text = { Text(config.aboutAuthor, color = textColors) },
+            confirmButton = { TextButton(onClick = { showAuthorDialog = false }) { Text("确定", color = Indigo500) } },
+            containerColor = cardBg,
+            titleContentColor = textColors
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bgColors)
+            .padding(top = 32.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Hero Section
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .background(Indigo500.copy(alpha = 0.1f), shape = RoundedCornerShape(50.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Person,
+                contentDescription = null,
+                modifier = Modifier.size(56.dp),
+                tint = Indigo500
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = if (nickname.isNotBlank()) nickname else if (isAdmin) "超级管理员" else "普通访客",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = textColors
+            )
+            IconButton(onClick = { tempNickname = nickname; showNicknameDialog = true }, modifier = Modifier.size(32.dp).padding(start = 8.dp)) {
+                Icon(Icons.Filled.Edit, contentDescription = "Edit Nickname", tint = Indigo500, modifier = Modifier.size(18.dp))
+            }
+        }
+        Text(
+            text = if (isAdmin) "您拥有所有站点的最高权限" else "欢迎来到秘境，尽情探索吧",
+            fontSize = 14.sp,
+            color = secondaryText,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Settings Section
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = cardBg),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column {
+                SettingsRow(
+                    icon = Icons.Filled.Info,
+                    label = "关于作者",
+                    onClick = { showAuthorDialog = true },
+                    textColors = textColors,
+                    iconTint = Indigo500
+                )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(dividerColor).padding(horizontal = 16.dp))
+                SettingsRow(
+                    icon = Icons.AutoMirrored.Filled.List,
+                    label = "检查更新",
+                    onClick = { showUpdateDialog = true },
+                    textColors = textColors,
+                    iconTint = Indigo500
+                )
+                if (isAdmin) {
+                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(dividerColor).padding(horizontal = 16.dp))
+                    SettingsRow(
+                        icon = Icons.Filled.Lock,
+                        label = "进入管理员控制台",
+                        onClick = { viewModel.goToAdmin() },
+                        textColors = textColors,
+                        iconTint = Indigo500
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        OutlinedButton(
+            onClick = { viewModel.logout() },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color.Red.copy(alpha=0.5f)),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red.copy(alpha=0.8f))
+        ) {
+            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+            Text("退出登录", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+fun SettingsRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    textColors: Color,
+    iconTint: Color
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = label, tint = iconTint, modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(text = label, color = textColors, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = textColors.copy(alpha = 0.3f), modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+fun PortalTabScreen(viewModel: MainViewModel) {
     var passcode by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     val isDark = isSystemInDarkTheme()
+    val isAdmin by viewModel.isAdminUser.collectAsState()
     
     val bgColors = if (isDark) Zinc950 else Zinc50
     val textColors = if (isDark) Zinc100 else Zinc900
@@ -540,25 +1024,30 @@ fun PasscodeScreen(viewModel: MainViewModel) {
                         Text("WebKit", fontSize = 12.sp, color = textColors)
                     }
                 }
-            }
-            
-            // Bottom Icons
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp, top = 16.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { viewModel.logout() },
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .size(48.dp)
-                        .background(cardBg, CircleShape)
-                        .border(1.dp, borderColor, CircleShape)
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "退出登录", tint = textColors, modifier = Modifier.alpha(0.6f))
+                
+                val announcements by viewModel.announcements.collectAsState()
+                if (announcements.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = cardBg),
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 120.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, borderColor)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("系统公告", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Indigo500, modifier = Modifier.padding(bottom = 8.dp))
+                            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                                items(announcements) { ann ->
+                                    Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                                        Text(ann.content, fontSize = 13.sp, color = textColors)
+                                        if (!ann.createdAt.isNullOrEmpty()) {
+                                            Text(ann.createdAt!!, fontSize = 10.sp, color = textColors.copy(alpha=0.5f))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -573,6 +1062,15 @@ fun PasscodeScreen(viewModel: MainViewModel) {
 fun WebViewScreen(url: String, onReturnHome: () -> Unit, onSwitchSite: () -> Unit) {
     val context = LocalContext.current
     var isMenuExpanded by remember { mutableStateOf(false) }
+
+    androidx.activity.compose.BackHandler {
+        val webView = webViewCache[url]
+        if (webView != null && webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            onReturnHome()
+        }
+    }
 
     // Dictionary to manage multiple webviews
     // In Compose, using a Box with all created WebViews. Only the matching URL is visible and resumed.
@@ -659,18 +1157,26 @@ fun WebViewManager(activeUrl: String) {
                     settings.apply {
                         javaScriptEnabled = true
                         domStorageEnabled = true
-                        databaseEnabled = true
                         cacheMode = WebSettings.LOAD_DEFAULT
-                        mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                        mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                         setSupportZoom(true)
                         builtInZoomControls = true
                         displayZoomControls = false
+                        userAgentString = "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
                     }
                     val cookieManager = CookieManager.getInstance()
                     cookieManager.setAcceptCookie(true)
                     cookieManager.setAcceptThirdPartyCookies(this, true)
 
-                    webViewClient = object : WebViewClient() {}
+                    webViewClient = object : WebViewClient() {
+                        @SuppressLint("WebViewClientOnReceivedSslError")
+                        override fun onReceivedSslError(view: WebView?, handler: android.webkit.SslErrorHandler?, error: android.net.http.SslError?) {
+                            handler?.proceed()
+                        }
+                        override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean {
+                            return false
+                        }
+                    }
                     webChromeClient = WebChromeClient()
 
                     loadUrl(activeUrl)
@@ -704,7 +1210,7 @@ fun SplashScreen(viewModel: MainViewModel) {
         contentAlignment = Alignment.Center
     ) {
         coil.compose.AsyncImage(
-            model = "http://47.238.233.72:3000/static/splash_image.png",
+            model = "http://47.238.233.72:3005/static/splash_image.png",
             contentDescription = "Splash Screen",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
