@@ -28,12 +28,8 @@ android {
       keyAlias = "upload"
       keyPassword = System.getenv("KEY_PASSWORD")
     }
-    create("debugConfig") {
-      storeFile = file("${rootDir}/debug.keystore")
-      storePassword = "android"
-      keyAlias = "androiddebugkey"
-      keyPassword = "android"
-    }
+    // Remove custom debugConfig to let Android Studio / Gradle use the default debug keystore
+    // This fixes CI builds failing due to missing debug.keystore file.
   }
 
   buildTypes {
@@ -44,7 +40,7 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
-      signingConfig = signingConfigs.getByName("debugConfig")
+      // Use standard default debug signing
     }
   }
   compileOptions {
