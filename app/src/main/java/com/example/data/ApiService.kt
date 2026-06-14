@@ -126,6 +126,13 @@ interface ApiService {
         @Path("id") id: Int
     ): Response<Unit>
 
+    @PUT("admin/sites/{id}")
+    suspend fun updateSite(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body site: Site
+    ): Response<Site>
+
     @GET("admin/accounts")
     suspend fun getAccounts(@Header("Authorization") token: String): Response<List<Account>>
 
@@ -135,9 +142,23 @@ interface ApiService {
         @Body account: Account
     ): Response<Account>
 
+    @PUT("admin/accounts/{id}")
+    suspend fun updateAccount(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body account: Account
+    ): Response<Account>
+
     @DELETE("admin/accounts/{id}")
     suspend fun deleteAccount(
         @Header("Authorization") token: String,
         @Path("id") id: Int
     ): Response<Unit>
+
+    @PUT("admin/announcements/{id}")
+    suspend fun updateAnnouncement(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body request: AnnouncementRequest
+    ): Response<Announcement>
 }

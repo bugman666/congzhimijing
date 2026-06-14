@@ -56,6 +56,10 @@ import com.example.data.AppDatabase
 import com.example.data.AppRepository
 import com.example.ui.theme.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -227,6 +231,36 @@ fun AdminDashboardScreen(viewModel: MainViewModel) {
 fun AnnouncementsManager(viewModel: MainViewModel, cardBg: Color, textColors: Color) {
     val announcements by viewModel.announcements.collectAsState()
     var content by remember { mutableStateOf("") }
+    
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editId by remember { mutableStateOf<Int?>(null) }
+    var editContent by remember { mutableStateOf("") }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("修改公告") },
+            text = {
+                OutlinedTextField(
+                    value = editContent,
+                    onValueChange = { editContent = it },
+                    label = { Text("内容") },
+                    modifier = Modifier.fillMaxWidth().height(100.dp)
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (editContent.isNotBlank() && editId != null) {
+                        viewModel.updateAnnouncement(editId!!, editContent)
+                        showEditDialog = false
+                    }
+                }) { Text("保存") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) { Text("取消") }
+            }
+        )
+    }
 
     Column {
         Card(colors = CardDefaults.cardColors(containerColor = cardBg), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
@@ -260,8 +294,17 @@ fun AnnouncementsManager(viewModel: MainViewModel, cardBg: Color, textColors: Co
                             Text("时间: ${ann.createdAt}", fontSize = 12.sp, color = textColors.copy(alpha=0.6f))
                         }
                     }
-                    IconButton(onClick = { viewModel.deleteAnnouncement(ann.id) }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "删除", tint = Color.Red)
+                    Row {
+                        IconButton(onClick = { 
+                            editId = ann.id
+                            editContent = ann.content
+                            showEditDialog = true
+                        }) {
+                            Icon(Icons.Filled.Edit, contentDescription = "修改", tint = Indigo500)
+                        }
+                        IconButton(onClick = { viewModel.deleteAnnouncement(ann.id) }) {
+                            Icon(Icons.Filled.Delete, contentDescription = "删除", tint = Color.Red)
+                        }
                     }
                 }
             }
@@ -275,6 +318,37 @@ fun SitesManager(viewModel: MainViewModel, cardBg: Color, textColors: Color) {
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
     var passcode by remember { mutableStateOf("") }
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editId by remember { mutableStateOf<Int?>(null) }
+    var editName by remember { mutableStateOf("") }
+    var editUrl by remember { mutableStateOf("") }
+    var editPasscode by remember { mutableStateOf("") }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("修改站点") },
+            text = {
+                Column {
+                    OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("名称") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = editUrl, onValueChange = { editUrl = it }, label = { Text("网址") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = editPasscode, onValueChange = { editPasscode = it }, label = { Text("特定解锁密钥") }, modifier = Modifier.fillMaxWidth())
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (editName.isNotEmpty() && editUrl.isNotEmpty() && editPasscode.isNotEmpty() && editId != null) {
+                        viewModel.updateSite(editId!!, editName, editUrl, editPasscode)
+                        showEditDialog = false
+                    }
+                }) { Text("保存") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) { Text("取消") }
+            }
+        )
+    }
 
     Column {
         Card(colors = CardDefaults.cardColors(containerColor = cardBg), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
@@ -304,8 +378,19 @@ fun SitesManager(viewModel: MainViewModel, cardBg: Color, textColors: Color) {
                         Text(site.url, fontSize = 12.sp, color = textColors.copy(alpha=0.6f))
                         Text("密钥: ${site.passcode}", fontSize = 12.sp, color = Indigo500)
                     }
-                    IconButton(onClick = { viewModel.deleteSite(site) }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "删除", tint = Color.Red)
+                    Row {
+                        IconButton(onClick = { 
+                            editId = site.id
+                            editName = site.name
+                            editUrl = site.url
+                            editPasscode = site.passcode
+                            showEditDialog = true
+                        }) {
+                            Icon(Icons.Filled.Edit, contentDescription = "修改", tint = Indigo500)
+                        }
+                        IconButton(onClick = { viewModel.deleteSite(site) }) {
+                            Icon(Icons.Filled.Delete, contentDescription = "删除", tint = Color.Red)
+                        }
                     }
                 }
             }
@@ -319,6 +404,40 @@ fun AccountsManager(viewModel: MainViewModel, cardBg: Color, textColors: Color) 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isAdmin by remember { mutableStateOf(false) }
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editId by remember { mutableStateOf<Int?>(null) }
+    var editUsername by remember { mutableStateOf("") }
+    var editPassword by remember { mutableStateOf("") }
+    var editIsAdmin by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("修改账号") },
+            text = {
+                Column {
+                    OutlinedTextField(value = editUsername, onValueChange = { editUsername = it }, label = { Text("账号") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = editPassword, onValueChange = { editPassword = it }, label = { Text("密码") }, modifier = Modifier.fillMaxWidth())
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = editIsAdmin, onCheckedChange = { editIsAdmin = it })
+                        Text("是否为管理员", color = textColors)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (editUsername.isNotEmpty() && editPassword.isNotEmpty() && editId != null) {
+                        viewModel.updateAccount(editId!!, editUsername, editPassword, editIsAdmin)
+                        showEditDialog = false
+                    }
+                }) { Text("保存") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) { Text("取消") }
+            }
+        )
+    }
 
     Column {
         Card(colors = CardDefaults.cardColors(containerColor = cardBg), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
@@ -351,8 +470,19 @@ fun AccountsManager(viewModel: MainViewModel, cardBg: Color, textColors: Color) 
                         Text(if (acc.isAdmin) "管理员" else "普通用户", fontSize = 12.sp, color = if(acc.isAdmin) Emerald500 else Color.Gray)
                     }
                     if (acc.username != "2643819278@qq.com") {
-                        IconButton(onClick = { viewModel.deleteAccount(acc) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "删除", tint = Color.Red)
+                        Row {
+                            IconButton(onClick = { 
+                                editId = acc.id
+                                editUsername = acc.username
+                                editPassword = acc.passcode
+                                editIsAdmin = acc.isAdmin
+                                showEditDialog = true
+                            }) {
+                                Icon(Icons.Filled.Edit, contentDescription = "修改", tint = Indigo500)
+                            }
+                            IconButton(onClick = { viewModel.deleteAccount(acc) }) {
+                                Icon(Icons.Filled.Delete, contentDescription = "删除", tint = Color.Red)
+                            }
                         }
                     }
                 }
@@ -1196,9 +1326,40 @@ fun WebViewManager(activeUrl: String) {
     )
 }
 
+suspend fun resolveRedirect(url: String): Pair<String, String?> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val client = OkHttpClient.Builder()
+                .followRedirects(false)
+                .followSslRedirects(false)
+                .build()
+            val request = Request.Builder().url(url).head().build()
+            val response = client.newCall(request).execute()
+            val location = response.header("Location")
+            val etag = response.header("ETag")
+            response.close()
+            
+            if (location != null) {
+                // If the server redirects, return the final URL
+                Pair(response.request.url.resolve(location)?.toString() ?: location, null)
+            } else {
+                Pair(url, etag) // no redirect, keep original url and possible ETag
+            }
+        } catch (e: Exception) {
+            Pair(url, null)
+        }
+    }
+}
+
 @Composable
 fun SplashScreen(viewModel: MainViewModel) {
+    var finalImageUrl by remember { mutableStateOf<String?>(null) }
+    var imageEtag by remember { mutableStateOf<String?>(null) }
+    
     LaunchedEffect(Unit) {
+        val (url, etag) = resolveRedirect("http://47.238.233.72:3005/api/v1/portal/splash")
+        finalImageUrl = url
+        imageEtag = etag
         delay(2000) // Show for 2 seconds
         viewModel.finishSplash()
     }
@@ -1209,12 +1370,24 @@ fun SplashScreen(viewModel: MainViewModel) {
             .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        coil.compose.AsyncImage(
-            model = "http://47.238.233.72:3005/static/splash_image.png",
-            contentDescription = "Splash Screen",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+        finalImageUrl?.let { url ->
+            coil.compose.AsyncImage(
+                model = coil.request.ImageRequest.Builder(LocalContext.current)
+                    .data(url)
+                    .apply {
+                        if (imageEtag != null) {
+                            memoryCacheKey("$url-$imageEtag")
+                            diskCacheKey("$url-$imageEtag")
+                        }
+                    }
+                    .crossfade(true)
+                    .diskCachePolicy(coil.request.CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = "Splash Screen",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 

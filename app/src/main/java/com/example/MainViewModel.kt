@@ -239,6 +239,19 @@ class MainViewModel(private val sharedPrefs: SharedPreferences) : ViewModel() {
         }
     }
 
+    fun updateAnnouncement(id: Int, content: String) {
+        viewModelScope.launch {
+            try {
+                val response = apiService.updateAnnouncement(token, id, AnnouncementRequest(content))
+                if (response.isSuccessful) {
+                    fetchAnnouncements()
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Update Announcement error", e)
+            }
+        }
+    }
+
     fun deleteAnnouncement(id: Int) {
         viewModelScope.launch {
             try {
@@ -361,6 +374,20 @@ class MainViewModel(private val sharedPrefs: SharedPreferences) : ViewModel() {
         }
     }
 
+    fun updateAccount(id: Int, username: String, pass: String, isAdmin: Boolean) {
+        viewModelScope.launch {
+            try {
+                val acc = Account(id = id, username = username, passcode = pass, isAdmin = isAdmin)
+                val response = apiService.updateAccount(token, id, acc)
+                if (response.isSuccessful) {
+                    fetchAdminData()
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Update Account error", e)
+            }
+        }
+    }
+
     fun deleteAccount(account: Account) {
         viewModelScope.launch {
             try {
@@ -384,6 +411,20 @@ class MainViewModel(private val sharedPrefs: SharedPreferences) : ViewModel() {
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Add Site error", e)
+            }
+        }
+    }
+
+    fun updateSite(id: Int, name: String, url: String, passcode: String) {
+        viewModelScope.launch {
+            try {
+                val site = Site(id = id, name = name, url = url, passcode = passcode)
+                val response = apiService.updateSite(token, id, site)
+                if (response.isSuccessful) {
+                    fetchAdminData()
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Update Site error", e)
             }
         }
     }
