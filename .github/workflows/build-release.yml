@@ -18,13 +18,14 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '17'
-        cache: gradle
 
-    - name: Give Gradle executable permissions
-      run: chmod +x gradlew
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
 
     - name: Build with Gradle
-      run: ./gradlew assembleDebug
+      run: gradle assembleDebug
 
     - name: Rename APK
       run: mv app/build/outputs/apk/debug/app-debug.apk app-release.apk
