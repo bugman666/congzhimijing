@@ -1,1 +1,39 @@
-bmFtZTogQnVpbGQgYW5kIFJlbGVhc2UgQVBLCgpvbjogCiAgcHVzaDoKICAgIHRhZ3M6CiAgICAgIC0gJ3YqJwoKam9iczoKICBidWlsZDoKICAgIHJ1bnMtb246IHVidW50dS1sYXRlc3QKCiAgICBzdGVwczoKICAgIC0gbmFtZTogQ2hlY2tvdXQKY29kZSAKICAgICAgdXNlczogYWN0aW9ucy9jaGVja291dEB2NAoKICAgIC0gbmFtZTogU2V0dXAgSmF2YSBKS0QKICAgICAgdXNlczogYWN0aW9ucy9zZXR1cC1qYXZhQHY0CiAgICAgIHdpdGg6CiAgICAgICAgZGlzdHJpYnV0aW9uOiAnenVsdScKICAgICAgICBqYXZhLXZlcnNpb246ICcxNycKICAgICAgICBjYWNoZTogZ3JhZGxlCgogICAgLSBuYW1lOiBHaXZlIEdyYWRsZSBleGVjdXRhYmxlIHBlcm1pc3Npb25zCiAgICAgIHJ1bjogY2htb2QgK3ggZ3JhZGxldwoKICAgIC0gbmFtZTogQnVpbGQgd2l0aCBHcmFkbGUKICAgICAgcnVuOiAuL2dyYWRsZXcgYXNzZW1ibGVEZWJ1ZwoKICAgIC0gbmFtZTogUmVuYW1lIEFQSwogICAgICBydW46IG12IGFwcC9idWlsZC9vdXRwdXRzL2Fway9kZWJ1Zy9hcHAtZGVidWcuYXBrIGFwcC1yZWxlYXNlLmFwawoKICAgIC0gbmFtZTogQ3JlYXRlIFJlbGVhc2UgYW5kIFVwbG9hZCBBUEsKICAgICAgdXNlczogc29mdHByb3BzL2FjdGlvbi1naC1yZWxlYXNlQHYyCiAgICAgIGlmOiBzdGFydHNXaXRoKGdpdGh1Yi5yZWYsICdyZWZzL3RhZ3MvJykKICAgICAgd2l0aDoKICAgICAgICBmaWxlczogYXBwLXJlbGVhc2UuYXBrCiAgICAgICAgZ2VuZXJhdGVfcmVsZWFzZV9ub3RlczogdHJ1ZQogICAgICBlbnY6CiAgICAgICAgR0lUSFVCX1RPS0VOOiAke3sgc2VjcmV0cy5HSVRIVUJfVE9LRU4gfX0K
+name: Build and Release APK
+
+on: 
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code 
+      uses: actions/checkout@v4
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        cache: gradle
+
+    - name: Give Gradle executable permissions
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew assembleDebug
+
+    - name: Rename APK
+      run: mv app/build/outputs/apk/debug/app-debug.apk app-release.apk
+
+    - name: Create Release and Upload APK
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: app-release.apk
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
