@@ -7,6 +7,15 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.Uri
+import android.os.Environment
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -85,9 +94,85 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+fun UpdateDialog(viewModel: MainViewModel) {
+    val updateInfo by viewModel.updateAvailable.collectAsState()
+    val context = LocalContext.current
+    var isDownloading by remember { mutableStateOf(false) }
+
+    updateInfo?.let { info ->
+        AlertDialog(
+            onDismissRequest = { /* Should be un-dismissable according to requirements */ },
+            title = { Text("发现新版本") },
+            text = { Text("有新版本 ${info.version} 可用，请更新后继续使用。\nURL: ${info.url}") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isDownloading = true
+                        startDownload(context, info.url, info.version)
+                    },
+                    enabled = !isDownloading
+                ) {
+                    Text(if (isDownloading) "正在下载..." else "立即更新")
+                }
+            },
+            dismissButton = {
+                // If it is strictly non-ignorable, we can hide or omit the dismiss button
+                // But giving an exit option is good, or just wait for download.
+            }
+        )
+    }
+}
+
+private fun startDownload(context: Context, url: String, version: String) {
+    val fileName = "update-$version.apk"
+    val request = DownloadManager.Request(Uri.parse(url)).apply {
+        setTitle("App Update")
+        setDescription("Downloading new version $version")
+        setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+        setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, fileName)
+    }
+
+    val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+    val downloadId = manager.enqueue(request)
+
+    val onComplete = object : BroadcastReceiver() {
+        override fun onReceive(ctxt: Context?, intent: Intent?) {
+            if (intent?.action == DownloadManager.ACTION_DOWNLOAD_COMPLETE) {
+                val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+                if (id == downloadId) {
+                    installApk(context, fileName)
+                    context.unregisterReceiver(this)
+                }
+            }
+        }
+    }
+    context.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED)
+}
+
+private fun installApk(context: Context, fileName: String) {
+    val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName)
+    if (!file.exists()) return
+
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, "application/vnd.android.package-archive")
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+    }
+    
+    try {
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+@Composable
 fun SecretAppMain(viewModel: MainViewModel) {
     val appState by viewModel.appState.collectAsState()
     
+    UpdateDialog(viewModel)
+
     Crossfade(targetState = appState, label = "main_crossfade") { state ->
         when (state) {
             AppState.SPLASH -> SplashScreen(viewModel)
@@ -1312,6 +1397,11 @@ fun WebViewManager(activeUrl: String) {
                     loadUrl(activeUrl)
                 }
                 webViewCache[activeUrl] = webView
+            }
+
+            val parent = webView.parent as? android.view.ViewGroup
+            if (parent != frameLayout) {
+                parent?.removeView(webView)
                 frameLayout.addView(webView)
             }
 

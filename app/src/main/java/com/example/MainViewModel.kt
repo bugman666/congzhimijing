@@ -23,16 +23,59 @@ import com.example.data.AppConfig
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 
+import org.json.JSONObject
+
+data class UpdateInfo(val version: String, val url: String)
+
 enum class AppState {
     SPLASH, LOGIN, ADMIN_DASHBOARD, PORTAL, WEBVIEW
 }
 
 class MainViewModel(private val sharedPrefs: SharedPreferences) : ViewModel() {
 
+    companion object {
+        const val CURRENT_VERSION = "1.0.0"
+    }
+
+    private val _updateAvailable = MutableStateFlow<UpdateInfo?>(null)
+    val updateAvailable: StateFlow<UpdateInfo?> = _updateAvailable
+
     val appState = MutableStateFlow(AppState.SPLASH)
     val activeUrl = MutableStateFlow<String?>(null)
     
     private val apiService = ApiClient.apiService
+
+    fun checkUpdateConfig(configString: String) {
+        try {
+            val json = JSONObject(configString)
+            val newVer = json.getString("version")
+            val url = json.getString("url")
+            val currentParts = CURRENT_VERSION.split(".").map { it.toIntOrNull() ?: 0 }
+            val newParts = newVer.split(".").map { it.toIntOrNull() ?: 0 }
+            
+            var isNewer = false
+            val maxLen = maxOf(currentParts.size, newParts.size)
+            for (i in 0 until maxLen) {
+                val cur = currentParts.getOrElse(i) { 0 }
+                val new = newParts.getOrElse(i) { 0 }
+                if (new > cur) {
+                    isNewer = true
+                    break
+                } else if (new < cur) {
+                    break
+                }
+            }
+            if (isNewer) {
+                _updateAvailable.value = UpdateInfo(newVer, url)
+            }
+        } catch (e: Exception) {
+            Log.e("MainViewModel", "Failed to parse update info", e)
+        }
+    }
+
+    fun dismissUpdate() {
+        _updateAvailable.value = null
+    }
 
     private val _isAdminUser = MutableStateFlow(false)
     val isAdminUser: StateFlow<Boolean> = _isAdminUser
@@ -324,7 +367,10 @@ class MainViewModel(private val sharedPrefs: SharedPreferences) : ViewModel() {
             try {
                 val response = apiService.getConfig(token)
                 if (response.isSuccessful) {
-                    response.body()?.let { _appConfig.value = it }
+                    response.body()?.let { 
+                        _appConfig.value = it 
+                        checkUpdateConfig(it.updateInfo)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Fetch Config error", e)
