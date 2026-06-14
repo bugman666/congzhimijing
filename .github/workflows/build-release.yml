@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code 
@@ -25,7 +27,7 @@ jobs:
         gradle-version: wrapper
 
     - name: Build with Gradle
-      run: gradle assembleDebug --no-daemon
+      run: gradle assembleDebug --no-daemon -Pkotlin.incremental.ksp=false -Pksp.useKSP2=true
 
     - name: Rename APK
       run: mv app/build/outputs/apk/debug/app-debug.apk app-release.apk
