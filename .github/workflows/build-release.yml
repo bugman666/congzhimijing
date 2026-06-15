@@ -26,23 +26,7 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
-        gradle-version: wrapper
-
-    - name: Generate debug keystore
-      run: |
-        echo "Generating debug keystore at $GITHUB_WORKSPACE/debug.keystore"
-        if [ -n "$JAVA_HOME_17_X64" ]; then
-          KEYTOOL="$JAVA_HOME_17_X64/bin/keytool"
-        elif [ -n "$JAVA_HOME" ]; then
-          KEYTOOL="$JAVA_HOME/bin/keytool"
-        else
-          KEYTOOL="keytool"
-        fi
-        mkdir -p "$GITHUB_WORKSPACE"
-        $KEYTOOL -genkey -v -keystore "$GITHUB_WORKSPACE/debug.keystore" -keyalg RSA -keysize 2048 -validity 10000 \
-          -alias androiddebugkey -keypass android -storepass android -dname "CN=Android,O=Android,C=US"
-        echo "Keystore created:"
-        ls -la "$GITHUB_WORKSPACE/debug.keystore" || true
+        gradle-version: 8.9
 
     - name: Build with Gradle
       run: gradle assembleDebug --no-daemon -Pkotlin.incremental.ksp=false -Pksp.useKSP2=true
