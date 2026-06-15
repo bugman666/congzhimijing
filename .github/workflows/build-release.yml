@@ -28,6 +28,11 @@ jobs:
       with:
         gradle-version: wrapper
 
+    - name: Generate debug keystore
+      run: |
+        keytool -genkey -v -keystore debug.keystore -keyalg RSA -keysize 2048 -validity 10000 \
+          -alias androiddebugkey -keypass android -storepass android -dname "CN=Android,O=Android,C=US"
+
     - name: Build with Gradle
       run: gradle assembleDebug --no-daemon -Pkotlin.incremental.ksp=false -Pksp.useKSP2=true
 
