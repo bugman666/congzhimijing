@@ -30,19 +30,27 @@ android {
     }
     create("debugConfig") {
       val keystoreFile = file("${rootDir}/debug.keystore")
-      if (keystoreFile.exists()) {
-        storeFile = keystoreFile
-        storePassword = "android"
-        keyAlias = "androiddebugkey"
-        keyPassword = "android"
-      } else {
-        // Fallback to default debug keystore path in ~/.android/debug.keystore if local project file is missing
-        val defaultDebugKeystore = file(System.getProperty("user.home") + "/.android/debug.keystore")
-        if (defaultDebugKeystore.exists()) {
-           storeFile = defaultDebugKeystore
-           storePassword = "android"
-           keyAlias = "androiddebugkey"
-           keyPassword = "android"
+      val defaultDebugKeystore = file(System.getProperty("user.home") + "/.android/debug.keystore")
+      
+      when {
+        keystoreFile.exists() -> {
+          storeFile = keystoreFile
+          storePassword = "android"
+          keyAlias = "androiddebugkey"
+          keyPassword = "android"
+        }
+        defaultDebugKeystore.exists() -> {
+          storeFile = defaultDebugKeystore
+          storePassword = "android"
+          keyAlias = "androiddebugkey"
+          keyPassword = "android"
+        }
+        else -> {
+          // Create a temporary debug keystore if none exists
+          storeFile = defaultDebugKeystore
+          storePassword = "android"
+          keyAlias = "androiddebugkey"
+          keyPassword = "android"
         }
       }
     }
@@ -56,9 +64,6 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
-      // It's better to just not assign signingConfig if our custom debugConfig didn't find any file,
-      // let Android Gradle Plugin use its default debug signing config automatically.
-      // Alternatively, we let it use debugConfig which might have storeFile set above.
       signingConfig = signingConfigs.getByName("debugConfig")
     }
   }
