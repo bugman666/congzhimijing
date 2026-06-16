@@ -299,6 +299,7 @@ fun AdminDashboardScreen(viewModel: MainViewModel) {
                 Tab(selected = tabIndex == 0, onClick = { tabIndex = 0 }) { Text("站点管理", modifier = Modifier.padding(16.dp), color = textColors) }
                 Tab(selected = tabIndex == 1, onClick = { tabIndex = 1 }) { Text("账号管理", modifier = Modifier.padding(16.dp), color = textColors) }
                 Tab(selected = tabIndex == 2, onClick = { tabIndex = 2 }) { Text("公告管理", modifier = Modifier.padding(16.dp), color = textColors) }
+                Tab(selected = tabIndex == 3, onClick = { tabIndex = 3 }) { Text("配置管理", modifier = Modifier.padding(16.dp), color = textColors) }
             }
 
             Box(modifier = Modifier.weight(1f).padding(16.dp)) {
@@ -306,6 +307,7 @@ fun AdminDashboardScreen(viewModel: MainViewModel) {
                     0 -> SitesManager(viewModel, cardBg, textColors)
                     1 -> AccountsManager(viewModel, cardBg, textColors)
                     2 -> AnnouncementsManager(viewModel, cardBg, textColors)
+                    3 -> ConfigManager(viewModel, cardBg, textColors)
                 }
             }
         }
@@ -391,6 +393,49 @@ fun AnnouncementsManager(viewModel: MainViewModel, cardBg: Color, textColors: Co
                             Icon(Icons.Filled.Delete, contentDescription = "删除", tint = Color.Red)
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ConfigManager(viewModel: MainViewModel, cardBg: Color, textColors: Color) {
+    val config by viewModel.appConfig.collectAsState()
+    var editUpdateInfo by remember { mutableStateOf(config.updateInfo) }
+    var editAboutAuthor by remember { mutableStateOf(config.aboutAuthor) }
+
+    LaunchedEffect(config) {
+        editUpdateInfo = config.updateInfo
+        editAboutAuthor = config.aboutAuthor
+    }
+
+    Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+        Card(colors = CardDefaults.cardColors(containerColor = cardBg), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("配置管理", fontWeight = FontWeight.Bold, color = textColors, modifier = Modifier.padding(bottom = 16.dp))
+
+                OutlinedTextField(
+                    value = editUpdateInfo,
+                    onValueChange = { editUpdateInfo = it },
+                    label = { Text("检查更新内容") },
+                    modifier = Modifier.fillMaxWidth().height(150.dp).padding(bottom = 16.dp)
+                )
+
+                OutlinedTextField(
+                    value = editAboutAuthor,
+                    onValueChange = { editAboutAuthor = it },
+                    label = { Text("关于作者内容") },
+                    modifier = Modifier.fillMaxWidth().height(150.dp).padding(bottom = 16.dp)
+                )
+
+                Button(
+                    onClick = {
+                        viewModel.updateConfig(editAboutAuthor, editUpdateInfo)
+                    },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("保存配置")
                 }
             }
         }
@@ -1245,7 +1290,7 @@ fun PortalTabScreen(viewModel: MainViewModel) {
                     Spacer(modifier = Modifier.height(24.dp))
                     Card(
                         colors = CardDefaults.cardColors(containerColor = cardBg),
-                        modifier = Modifier.fillMaxWidth().heightIn(max = 120.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, borderColor)
                     ) {
@@ -1253,9 +1298,41 @@ fun PortalTabScreen(viewModel: MainViewModel) {
                             Text("系统公告", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Indigo500, modifier = Modifier.padding(bottom = 8.dp))
                             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                                 items(announcements) { ann ->
-                                    Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                                        Text(ann.content, fontSize = 13.sp, color = textColors)
+                                    var showAnnDialog by remember { mutableStateOf(false) }
+                                    if (showAnnDialog) {
+                                        AlertDialog(
+                                            onDismissRequest = { showAnnDialog = false },
+                                            title = { Text("系统公告", fontWeight = FontWeight.Bold) },
+                                            text = {
+                                                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                                                    Text(ann.content, color = textColors)
+                                                    if (!ann.createdAt.isNullOrEmpty()) {
+                                                        Spacer(modifier = Modifier.height(16.dp))
+                                                        Text(ann.createdAt!!, fontSize = 12.sp, color = textColors.copy(alpha=0.5f))
+                                                    }
+                                                }
+                                            },
+                                            confirmButton = { TextButton(onClick = { showAnnDialog = false }) { Text("关闭", color = Indigo500) } },
+                                            containerColor = cardBg,
+                                            titleContentColor = textColors
+                                        )
+                                    }
+
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { showAnnDialog = true }
+                                            .padding(vertical = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = ann.content,
+                                            fontSize = 13.sp,
+                                            color = textColors,
+                                            maxLines = 2,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                        )
                                         if (!ann.createdAt.isNullOrEmpty()) {
+                                            Spacer(modifier = Modifier.height(4.dp))
                                             Text(ann.createdAt!!, fontSize = 10.sp, color = textColors.copy(alpha=0.5f))
                                         }
                                     }
@@ -1291,7 +1368,7 @@ fun WebViewScreen(url: String, onReturnHome: () -> Unit, onSwitchSite: () -> Uni
     // In Compose, using a Box with all created WebViews. Only the matching URL is visible and resumed.
     Box(modifier = Modifier.fillMaxSize()) {
         WebViewManager(activeUrl = url)
-        
+
         // Global Navigation Float Button
         Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomEnd) {
             Column(horizontalAlignment = Alignment.End) {
@@ -1311,9 +1388,19 @@ fun WebViewScreen(url: String, onReturnHome: () -> Unit, onSwitchSite: () -> Uni
                         ) {
                             Icon(Icons.AutoMirrored.Filled.List, contentDescription = "切换站点", tint = Zinc900)
                         }
+                        FloatingActionButton(
+                            onClick = {
+                                webViewCache[url]?.reload()
+                                isMenuExpanded = false
+                            },
+                            containerColor = Zinc100,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        ) {
+                            Icon(Icons.Filled.Refresh, contentDescription = "刷新页面", tint = Zinc900)
+                        }
                     }
                 }
-                
+
                 FloatingActionButton(
                     onClick = { isMenuExpanded = !isMenuExpanded },
                     containerColor = Indigo500
