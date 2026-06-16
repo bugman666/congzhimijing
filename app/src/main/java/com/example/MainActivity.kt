@@ -37,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
@@ -56,6 +57,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -411,7 +413,7 @@ fun ConfigManager(viewModel: MainViewModel, cardBg: Color, textColors: Color) {
         editAboutAuthor = config.aboutAuthor
     }
 
-    Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         Card(colors = CardDefaults.cardColors(containerColor = cardBg), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("配置管理", fontWeight = FontWeight.Bold, color = textColors, modifier = Modifier.padding(bottom = 16.dp))
@@ -1305,7 +1307,7 @@ fun PortalTabScreen(viewModel: MainViewModel) {
                                             onDismissRequest = { showAnnDialog = false },
                                             title = { Text("系统公告", fontWeight = FontWeight.Bold) },
                                             text = {
-                                                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                                     Text(ann.content, color = textColors)
                                                     if (!ann.createdAt.isNullOrEmpty()) {
                                                         Spacer(modifier = Modifier.height(16.dp))
@@ -1330,7 +1332,7 @@ fun PortalTabScreen(viewModel: MainViewModel) {
                                             fontSize = 13.sp,
                                             color = textColors,
                                             maxLines = 2,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         if (!ann.createdAt.isNullOrEmpty()) {
                                             Spacer(modifier = Modifier.height(4.dp))
